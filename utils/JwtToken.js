@@ -24,22 +24,30 @@ const verifyToken = () => {
     secret: secret,
     algorithms: ['HS256'], // 要加才能对
     // requestProperty:'auth',//自定义获取的信息位置，默认验证通过req.user获取token信息
-    // credentialsRequired: false //是否允许无token请求
+    // credentialsRequired: true //是否允许无token请求
   }).unless({
-    path: ['/sys/login','/sys/registry'] //除了这个地址，其他的URL都需要验证
+    path: ['/sys/login','/sys/registry','/socket'] //除了这个地址，其他的URL都需要验证
   });
 };
 
 // 失败处理--放到最后一个app.use()
 const errorToken = (err, req, res, next) => {
-
   if (err.name === 'UnauthorizedError') { 
     //  这个需要根据自己的业务逻辑来处理（ 具体的err值 请看下面）
-    let obj = {};
-    obj.msg = 'token验证失败';
-    obj.code = 403;
-    obj.data = {};
-    res.send(obj); //返回失败信息
+    let obj = {
+      msg: 'token验证失败',
+      code : 403,
+      data : {}
+    };
+    if (req.originalUrl.indexOf('/socket.io/') !== -1) {
+      res.send({
+        msg: 'success',
+        code : 200,
+        data : {}
+      }); //返回失败信息
+    }else{
+      res.send(obj); //返回失败信息
+    }
   }else next()
 };
 
